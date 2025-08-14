@@ -1,74 +1,89 @@
 import { Request, Response } from 'express';
-import { ProductService } from '../services/products.service';
+import pool from '../services/db.service';
+import { RowDataPacket } from 'mysql2';
 
-export class ProductsController {
-    private productService: ProductService;
+export const createProduct = async (req: Request, res: Response) => {
+    try {
+        const { name, description, price, stock, category_id } = req.body;
 
-    constructor() {
-        this.productService = new ProductService();
-    }
 
-    // Get all products
-    async getAllProducts(req: Request, res: Response): Promise<Response> {
-        try {
-            const products = await this.productService.getAllProducts();
-            return res.status(200).json(products);
-        } catch (error) {
-            return res.status(500).json({ message: 'Error fetching products', error });
+        if (!name || !price) {
+            return res.status(400).json({ message: 'Nombre y precio son campos obligatorios.' });
         }
-    }
 
-    // Get a single product by ID
-    async getProductById(req: Request, res: Response): Promise<Response> {
-        try {
-            const { id } = req.params;
-            const product = await this.productService.getProductById(id);
-            if (!product) {
-                return res.status(404).json({ message: 'Product not found' });
-            }
-            return res.status(200).json(product);
-        } catch (error) {
-            return res.status(500).json({ message: 'Error fetching product', error });
-        }
-    }
+        const [result] = await pool.execute(
+            'INSERT INTO products (name, description, price, stock, category_id) VALUES (?, ?, ?, ?, ?)',
+            [name, description, price, stock, category_id]
+        );
 
-    // Create a new product
-    async createProduct(req: Request, res: Response): Promise<Response> {
-        try {
-            const productData = req.body;
-            const newProduct = await this.productService.createProduct(productData);
-            return res.status(201).json(newProduct);
-        } catch (error) {
-            return res.status(500).json({ message: 'Error creating product', error });
-        }
+        res.status(201).json({ message: 'Producto creado exitosamente.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al crear el producto.' });
     }
+};
 
-    // Update an existing product
-    async updateProduct(req: Request, res: Response): Promise<Response> {
-        try {
-            const { id } = req.params;
-            const productData = req.body;
-            const updatedProduct = await this.productService.updateProduct(id, productData);
-            if (!updatedProduct) {
-                return res.status(404).json({ message: 'Product not found' });
-            }
-            return res.status(200).json(updatedProduct);
-        } catch (error) {
-            return res.status(500).json({ message: 'Error updating product', error });
-        }
-    }
 
-    // Delete a product
-    async deleteProduct(req: Request, res: Response): Promise<Response> {
-        try {
-            const { id } = req.params;
-            const deleted = await this.productService.deleteProduct(id);
-            if (!deleted) {
-                return res.status(404).json({ message: 'Product not found' });
-            }
-            return res.status(200).json({ message: 'Product deleted successfully' });
-        } catch (error) {
-            return res.status(500).json({ message: 'Error deleting product', error });
-        }
+export const getProducts = async (req: Request, res: Response) => {
+    try {
+        const [rows] = await pool.execute('SELECT * FROM products');
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener los productos.' });
     }
-}
+};
+
+
+export const updateProduct = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { name, description, price, stock, category_id } = req.body;
+
+        // Validación de campos obligatorios
+        if (!name || !price) {
+            return res.status(400).json({ message: 'Nombre y precio son campos obligatorios.' });
+        }
+
+        const [result] = await pool.execute(
+            'UPDATE products SET name = ?, description = ?, price = ?, stock = ?, category_id = ? WHERE id = ?',
+            [name, description, price, stock, category_id, id]
+        );
+
+        res.json({ message: 'Producto actualizado exitosamente.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al actualizar el producto.' });
+    }
+};
+
+
+export const deleteProduct = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        await pool.execute('DELETE FROM products WHERE id = ?', [id]);
+        res.json({ message: 'Producto eliminado exitosamente.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al eliminar el producto.' });
+    }
+};
+
+export const getProductById = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // La consulta SQL correcta debe especificar las columnas a seleccionar (por ejemplo, '*')
+        const [rows] = await pool.execute<RowDataPacket[]>('SELECT * FROM products WHERE id = ?', [id]);
+
+        // Si no se encuentra el producto, `rows` será un arreglo vacío.
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Producto no encontrado.' });
+        }
+
+        res.json(rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener el producto.' });
+    }
+};

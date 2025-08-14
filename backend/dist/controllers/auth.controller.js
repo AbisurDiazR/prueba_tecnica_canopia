@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = exports.register = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const db_service_1 = __importDefault(require("./../services/db.service"));
+const db_service_1 = __importDefault(require("../services/db.service"));
 const register = async (req, res) => {
     try {
         const { username, password, email } = req.body;

@@ -1,0 +1,5 @@
+# Ignorar el directorio de datos (Docker MySQL)
+data/
+
+# Ignorar el archivo de variables de entorno
+.env

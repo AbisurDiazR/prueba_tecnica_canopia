@@ -1,7 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
-//import authRoutes from './routes/auth.routes';
-//import productRoutes from './routes/products.routes';
+import productsRoutes from './routes/products.routes';
+import authRoutes from './routes/auth.routes';
+import categoriesRoutes from './routes/categories.routes';
 
 dotenv.config();
 
@@ -11,8 +12,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Rutas
-//app.use('/api', authRoutes);
-//app.use('/api', productRoutes);
+app.use('/api/products',productsRoutes);
+app.use('/api/auth',authRoutes);
+app.use('/api/categories',categoriesRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -1,74 +1,79 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProductsController = void 0;
-const products_service_1 = require("../services/products.service");
-class ProductsController {
-    constructor() {
-        this.productService = new products_service_1.ProductService();
+exports.getProductById = exports.deleteProduct = exports.updateProduct = exports.getProducts = exports.createProduct = void 0;
+const db_service_1 = __importDefault(require("../services/db.service"));
+const createProduct = async (req, res) => {
+    try {
+        const { name, description, price, stock, category_id } = req.body;
+        if (!name || !price) {
+            return res.status(400).json({ message: 'Nombre y precio son campos obligatorios.' });
+        }
+        const [result] = await db_service_1.default.execute('INSERT INTO products (name, description, price, stock, category_id) VALUES (?, ?, ?, ?, ?)', [name, description, price, stock, category_id]);
+        res.status(201).json({ message: 'Producto creado exitosamente.' });
     }
-    // Get all products
-    async getAllProducts(req, res) {
-        try {
-            const products = await this.productService.getAllProducts();
-            return res.status(200).json(products);
-        }
-        catch (error) {
-            return res.status(500).json({ message: 'Error fetching products', error });
-        }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al crear el producto.' });
     }
-    // Get a single product by ID
-    async getProductById(req, res) {
-        try {
-            const { id } = req.params;
-            const product = await this.productService.getProductById(id);
-            if (!product) {
-                return res.status(404).json({ message: 'Product not found' });
-            }
-            return res.status(200).json(product);
-        }
-        catch (error) {
-            return res.status(500).json({ message: 'Error fetching product', error });
-        }
+};
+exports.createProduct = createProduct;
+const getProducts = async (req, res) => {
+    try {
+        const [rows] = await db_service_1.default.execute('SELECT * FROM products');
+        res.json(rows);
     }
-    // Create a new product
-    async createProduct(req, res) {
-        try {
-            const productData = req.body;
-            const newProduct = await this.productService.createProduct(productData);
-            return res.status(201).json(newProduct);
-        }
-        catch (error) {
-            return res.status(500).json({ message: 'Error creating product', error });
-        }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener los productos.' });
     }
-    // Update an existing product
-    async updateProduct(req, res) {
-        try {
-            const { id } = req.params;
-            const productData = req.body;
-            const updatedProduct = await this.productService.updateProduct(id, productData);
-            if (!updatedProduct) {
-                return res.status(404).json({ message: 'Product not found' });
-            }
-            return res.status(200).json(updatedProduct);
+};
+exports.getProducts = getProducts;
+const updateProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description, price, stock, category_id } = req.body;
+        // Validación de campos obligatorios
+        if (!name || !price) {
+            return res.status(400).json({ message: 'Nombre y precio son campos obligatorios.' });
         }
-        catch (error) {
-            return res.status(500).json({ message: 'Error updating product', error });
-        }
+        const [result] = await db_service_1.default.execute('UPDATE products SET name = ?, description = ?, price = ?, stock = ?, category_id = ? WHERE id = ?', [name, description, price, stock, category_id, id]);
+        res.json({ message: 'Producto actualizado exitosamente.' });
     }
-    // Delete a product
-    async deleteProduct(req, res) {
-        try {
-            const { id } = req.params;
-            const deleted = await this.productService.deleteProduct(id);
-            if (!deleted) {
-                return res.status(404).json({ message: 'Product not found' });
-            }
-            return res.status(200).json({ message: 'Product deleted successfully' });
-        }
-        catch (error) {
-            return res.status(500).json({ message: 'Error deleting product', error });
-        }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al actualizar el producto.' });
     }
-}
-exports.ProductsController = ProductsController;
+};
+exports.updateProduct = updateProduct;
+const deleteProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db_service_1.default.execute('DELETE FROM products WHERE id = ?', [id]);
+        res.json({ message: 'Producto eliminado exitosamente.' });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al eliminar el producto.' });
+    }
+};
+exports.deleteProduct = deleteProduct;
+const getProductById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // La consulta SQL correcta debe especificar las columnas a seleccionar (por ejemplo, '*')
+        const [rows] = await db_service_1.default.execute('SELECT * FROM products WHERE id = ?', [id]);
+        // Si no se encuentra el producto, `rows` será un arreglo vacío.
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Producto no encontrado.' });
+        }
+        res.json(rows[0]);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener el producto.' });
+    }
+};
+exports.getProductById = getProductById;

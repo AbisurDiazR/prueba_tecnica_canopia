@@ -1,21 +1,22 @@
 import { Router } from 'express';
 import { getProducts, getProductById, createProduct, updateProduct, deleteProduct } from '../controllers/products.controller';
+import { authenticateToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
 // Get all products
-router.get('/', getProducts);
+router.get('/', authenticateToken, getProducts);
 
 // Get a product by ID
-router.get('/:id', getProductById);
+router.get('/:id', authenticateToken, getProductById);
 
 // Create a new product
-router.post('/', createProduct);
+router.post('/', authenticateToken, createProduct);
 
 // Update a product by ID
-router.put('/:id', updateProduct);
+router.put('/:id', authenticateToken, updateProduct);
 
 // Delete a product by ID
-router.delete('/:id', deleteProduct);
+router.delete('/:id', authenticateToken, deleteProduct);
 
 export default router;
